@@ -1,5 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next"
-import { createPrivateKey } from "node:crypto"
+import { createPrivateKey, createHash } from "node:crypto"
 import { OAuthConfig } from "next-auth/providers"
 import { generators, TokenSetParameters } from "openid-client"
 import * as cookie from "cookie"
@@ -80,14 +80,19 @@ function isRoute(req: NextApiRequest, action: string, providerId: string) {
   return nextauth?.[0] === action && nextauth?.[1] === providerId
 }
 
+function hashNonce(nonce: string) {
+  return createHash("sha256").update(nonce).digest("base64url")
+}
+
 function setNonce(
   req: NextApiRequest,
   res: NextApiResponse<any>
 ): string | undefined {
   if (isRoute(req, "signin", PROVIDER_ID)) {
     const nonce = generators.nonce()
+    const hashedNonce = hashNonce(nonce)
     writeCookie(res, NONCE_COOKIE_NAME, nonce)
-    return nonce
+    return hashedNonce
   }
   return undefined
 }
@@ -99,7 +104,7 @@ function getNonce(
   if (isRoute(req, "callback", PROVIDER_ID)) {
     const nonce = readCookie(req, NONCE_COOKIE_NAME)
     clearCookie(res, NONCE_COOKIE_NAME)
-    return nonce
+    return hashNonce(nonce)
   }
   return undefined
 }
