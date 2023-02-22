@@ -42,13 +42,18 @@ export default function GovUkSignInProvider<P extends GovUkSignInProfile>(
     },
     idToken: false,
     token: {
-      // https://github.com/nextauthjs/next-auth/blob/641d917175026ec974d1d255064b2591db0c56e6/packages/next-auth/src/core/lib/oauth/callback.ts#L105
+      // Extend the default behaviour to include the nonce value in token
+      // exchange.
+      // See: https://github.com/nextauthjs/next-auth/blob/641d917175026ec974d1d255064b2591db0c56e6/packages/next-auth/src/core/lib/oauth/callback.ts#L105
       async request({
         provider,
         params,
         client,
         checks,
       }): Promise<{ tokens: TokenSetParameters }> {
+        // The `nonce` value needs to be stored in the client (in a cookie)
+        // passed into the token exchange, to ensure it matches the value
+        // provided in the authorize request
         const nonce = getNonce(req, res)
         const redirectUri = provider.callbackUrl
         const tokens = await client.callback(redirectUri, params, {
