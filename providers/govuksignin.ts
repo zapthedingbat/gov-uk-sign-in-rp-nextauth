@@ -38,6 +38,16 @@ export default function GovUkSignInProvider<P extends GovUkSignInProfile>(
       params: {
         nonce: setNonce(req, res),
         scope: "openid email phone",
+        // Request identity verification
+        vtr: `["P2.Cl.Cm"]`,
+        claims: JSON.stringify({
+          userinfo: {
+            // Core identity claim
+            "https://vocab.account.gov.uk/v1/coreIdentityJWT": {
+              essential: true,
+            },
+          },
+        }),
       },
     },
     idToken: false,
